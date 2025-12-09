@@ -12,7 +12,7 @@ import { UpdateClientDto } from './dto/update-client.dto';
 export class ClientsService {
   constructor(
     @InjectRepository(Client) private readonly clientsRepository: Repository<Client>,
-  ) {}
+  ) { }
 
   /**
    * Creates a new client.
@@ -39,6 +39,10 @@ export class ClientsService {
    */
   async findOne(id: string): Promise<Client | null> {
     return this.clientsRepository.findOne({ where: { id }, relations: ['user'] });
+  }
+
+  async findByUserId(userId: string): Promise<Client | null> {
+    return this.clientsRepository.findOne({ where: { user: { id: userId } } });
   }
 
   /**

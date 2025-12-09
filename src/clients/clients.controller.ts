@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -6,16 +6,17 @@ import { UpdateClientDto } from './dto/update-client.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('clients')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('clients')
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(private readonly clientsService: ClientsService) { }
 
   /**
-   * Only admins can create clients manually.  Usually they are created with registration.
+   * Only admins can create clients manually.
    */
   @Post()
   @Roles('admin')
@@ -37,7 +38,13 @@ export class ClientsController {
    */
   @Get(':id')
   @Roles('admin', 'client')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    if (user.role !== 'admin') {
+      const client = await this.clientsService.findByUserId(user.id);
+      if (!client || client.id !== id) {
+        throw new ForbiddenException('You can only view your own profile');
+      }
+    }
     return this.clientsService.findOne(id);
   }
 
