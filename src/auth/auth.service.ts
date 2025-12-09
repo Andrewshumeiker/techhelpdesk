@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
@@ -10,11 +10,11 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
-    /** 
-   * Validates the credentials of a user.  Returns the user without password if they are correct.
-   */
+  /** 
+ * Validates the credentials of a user.  Returns the user without password if they are correct.
+ */
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -46,8 +46,13 @@ export class AuthService {
    * Registers a new user and returns the created data (without password).
    */
   async register(dto: RegisterDto) {
+    // SECURITY: Prevent public registration of admin accounts
+    if (dto.role === 'admin') {
+      throw new ForbiddenException('Registration as admin is not allowed publicly');
+    }
+
     const existing = await this.usersService.findByEmail(dto.email);
-    if (existing) { 
+    if (existing) {
       throw new BadRequestException('Email already registered');
     }
     return this.usersService.createWithProfile(dto);
