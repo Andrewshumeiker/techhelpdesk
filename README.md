@@ -407,7 +407,8 @@ npm run build
 ## Contributors
 
 - **Andrewshumeiker** - Initial work
-
+- **Andres covaleda** - linus
+  
 ## License
 
 This project is licensed under the MIT License.
